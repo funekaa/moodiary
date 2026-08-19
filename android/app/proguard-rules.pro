@@ -40,6 +40,11 @@
     native <methods>;
 }
 
+# Rust FFI & Cargokit
+-keep class com.flutter_rust_bridge.** { *; }
+-keep class * implements com.flutter_rust_bridge.** { *; }
+-keep class cargokit.** { *; }
+
 # OAID
 -keep class com.github.gzuliyujiang.** { *; }
 

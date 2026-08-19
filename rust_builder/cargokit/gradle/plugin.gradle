@@ -127,13 +127,8 @@ class CargoKitPlugin implements Plugin<Project> {
                 def jniLibs = project.android.sourceSets.maybeCreate(buildType).jniLibs;
                 jniLibs.srcDir(new File(cargoOutputDir))
 
-                // 默认目标平台
-                def platforms = ["android-arm64", "android-arm", "android-x64"]
-
-                // Debug 构建时添加 x86
-                if (buildType == "debug") {
-                    platforms.add("android-x86")
-                }
+                // 默认目标平台（仅 arm64）
+                def platforms = ["android-arm64"]
 
                 // 获取 app 项目的配置（直接使用字符串值）
                 def ndkVersion = appProject.extensions.android.ndkVersion
