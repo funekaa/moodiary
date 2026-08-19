@@ -36,7 +36,7 @@ jobs:
       - name: Set Up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+          targets: aarch64-linux-android
 
       - name: Install Dependencies
         run: flutter pub get
@@ -57,11 +57,8 @@ jobs:
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Build APK (Split Per ABI)
-        run: flutter build apk --release --split-per-abi
-
-      - name: Build Universal APK
-        run: flutter build apk --release
+      - name: Build APK (arm64-v8a)
+        run: flutter build apk --release --target-platform android-arm64
 
       - name: Collect and Upload APK Artifacts
         uses: actions/upload-artifact@v4
@@ -111,14 +108,12 @@ jobs:
             ## Moodiary ${{ env.TAG_NAME }} 发布说明
 
             ### 🚀 优化与功能更新
-            - **大幅缩减安装包体积**：清理废弃 TFLite 离线推理库，包体积降低 15MB~25MB+。
+            - **极致体积优化**：专为主流 Android arm64-v8a 架构优化构建，大幅精简包体积并提升运行性能。
             - **Rust Jieba 精简分词**：关闭全量静态词典，使用轻量化词典以精简原生库大小。
             - **多项核心 Bug 修复**：修复数据库迁移版本比对错误、备份打包并发竞争漏洞、时间窗口加密跨午夜失效问题、WebDAV 类型转换异常、音频加载容错与系统配置默认值保护。
 
             ### 📦 下载说明
-            - `app-arm64-v8a-release.apk`：适用于大多数现代 Android 手机（推荐）。
-            - `app-armeabi-v7a-release.apk`：适用于较旧的 32 位 Android 设备。
-            - `app-release.apk`：包含全部架构的通用安装包。
+            - `app-release.apk`：适用于目前绝大多数主流 Android 手机（64位 ARM v8 架构）。
           files: release-assets/*
           draft: false
           prerelease: false
