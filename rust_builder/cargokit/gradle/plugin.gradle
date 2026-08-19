@@ -88,25 +88,26 @@ class CargoKitPlugin implements Plugin<Project> {
 
     static String file;
 
+    private static void whenEvaluated(Project p, Closure c) {
+        if (p.state.executed) {
+            c()
+        } else {
+            p.afterEvaluate { c() }
+        }
+    }
+
     @Override
     void apply(Project project) {
         project.extensions.create("cargokit", CargoKitExtension)
 
-        // 等待根项目被完全评估
-        project.rootProject.afterEvaluate {
-            // 尝试找到 app 项目
+        whenEvaluated(project.rootProject) {
             def appProject = project.rootProject.findProject(':app')
-
             if (appProject == null) {
-                print("App project not found, CargoKit plugin will not be applied.")
                 return
             }
 
-            // 等待 app 项目被完全评估
-            appProject.afterEvaluate {
-                // 检查 app 项目是否有 android 插件
+            whenEvaluated(appProject) {
                 if (!appProject.plugins.hasPlugin('com.android.application')) {
-                    print("App project doesn't have android application plugin, CargoKit plugin will not be applied.")
                     return
                 }
 
@@ -115,52 +116,51 @@ class CargoKitPlugin implements Plugin<Project> {
         }
     }
 
-    private void setupCargoKitBuild(Project project, def appProject) {
-        // 在 moodiary_rust 项目被评估后执行
-        project.afterEvaluate {
+    private static void setupCargoKitBuild(Project project, def appProject) {
+        whenEvaluated(project) {
             def cargoBuildDir = "${project.buildDir}/build"
 
             project.android.libraryVariants.all { variant ->
                 final buildType = variant.buildType.name
 
-                def cargoOutputDir = "${project.buildDir}/jniLibs/${buildType}";
-                def jniLibs = project.android.sourceSets.maybeCreate(buildType).jniLibs;
+                def cargoOutputDir = "${project.buildDir}/jniLibs/${buildType}"
+                def jniLibs = project.android.sourceSets.maybeCreate(buildType).jniLibs
                 jniLibs.srcDir(new File(cargoOutputDir))
 
                 // 默认目标平台（仅 arm64）
                 def platforms = ["android-arm64"]
 
-                // 获取 app 项目的配置（直接使用字符串值）
                 def ndkVersion = appProject.extensions.android.ndkVersion
-                def sdkDirectory = appProject.extensions.android.sdkDirectory.toString()
-                def minSdkVersion = appProject.extensions.android.defaultConfig.minSdkVersion.apiLevel
-                // compileSdkVersion 可能是 "android-36" 格式
-                def compileSdkVersionString = appProject.extensions.android.compileSdkVersion.toString()
-                def compileSdkVersion = compileSdkVersionString.replaceAll("android-", "") as int
+                def sdkDirObj = appProject.extensions.android.sdkDirectory
+                def sdkDirectory = sdkDirObj != null ? sdkDirObj.toString() : ""
+                def minSdkVersion = 26
+                if (appProject.extensions.android.defaultConfig.minSdkVersion != null) {
+                    minSdkVersion = appProject.extensions.android.defaultConfig.minSdkVersion.apiLevel
+                }
+                def compileSdkVersion = 35
+                if (appProject.extensions.android.compileSdkVersion != null) {
+                    def compileSdkVersionString = appProject.extensions.android.compileSdkVersion.toString()
+                    compileSdkVersion = compileSdkVersionString.replaceAll("android-", "") as int
+                }
 
-                def taskName = "cargokitCargoBuild${project.cargokit.libname.capitalize()}${buildType.capitalize()}";
+                def taskName = "cargokitCargoBuild${project.cargokit.libname.capitalize()}${buildType.capitalize()}"
 
                 if (project.tasks.findByName(taskName)) {
                     return
                 }
 
-                if (ndkVersion == null) {
-                    throw new GradleException("Please set 'android.ndkVersion' in 'app/build.gradle'.")
-                }
-
                 def task = project.tasks.create(taskName, CargoKitBuildTask.class) {
-                    buildMode = variant.buildType.name
-                    buildDir = cargoBuildDir
-                    outputDir = cargoOutputDir
-                    ndkVersion = ndkVersion
-                    sdkDirectory = sdkDirectory
-                    minSdkVersion = minSdkVersion
-                    compileSdkVersion = compileSdkVersion
-                    targetPlatforms = platforms
-                    pluginFile = CargoKitPlugin.file
+                    it.buildMode = variant.buildType.name
+                    it.buildDir = cargoBuildDir
+                    it.outputDir = cargoOutputDir
+                    it.ndkVersion = ndkVersion != null ? ndkVersion : "27.0.12077973"
+                    it.sdkDirectory = sdkDirectory
+                    it.minSdkVersion = minSdkVersion
+                    it.compileSdkVersion = compileSdkVersion
+                    it.targetPlatforms = platforms
+                    it.pluginFile = CargoKitPlugin.file
                 }
 
-                // 设置任务依赖
                 project.tasks.findByName("merge${buildType.capitalize()}NativeLibs")?.dependsOn task
                 task.outputs.upToDateWhen { false }
             }
