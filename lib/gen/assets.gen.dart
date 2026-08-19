@@ -52,7 +52,7 @@ class $AssetsLottieGen {
     loadingMaterial,
     ok,
   ];
-
+}
 
 class $ResSponsorGen {
   const $ResSponsorGen();
