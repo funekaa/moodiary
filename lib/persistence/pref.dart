@@ -103,6 +103,11 @@ class PrefUtil {
     'ai_all_provider_models',
   };
 
+  static String? _lastAppVersion;
+
+  /// 获取上一次存储的应用版本号（供迁移用）
+  static String? get lastAppVersion => _lastAppVersion;
+
   static Future<void> initPref() async {
     _prefs = await SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(
@@ -117,7 +122,8 @@ class PrefUtil {
     final packageInfo = await PackageUtil.getPackageInfo();
     final currentVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
     final appVersion = _prefs.getString('appVersion');
-    if (appVersion != null) MergeUtil.merge(lastAppVersion: appVersion);
+    // 保存上一版本号供数据库迁移使用（迁移必须在 Isar 初始化之后执行）
+    _lastAppVersion = appVersion;
     // 如果是首次启动或版本不一致
     if (kDebugMode ||
         firstStart ||

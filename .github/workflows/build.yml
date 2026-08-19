@@ -96,7 +96,10 @@ jobs:
       - name: Prepare Release Assets
         run: |
           mkdir -p release-assets
-          cp -r artifacts/android/*.apk release-assets/ || true
+          VERSION="${TAG_NAME#v}"
+          for apk in artifacts/android/*.apk; do
+            cp "$apk" "release-assets/moodiary-${VERSION}-arm64-v8a.apk"
+          done
           ls -la release-assets
 
       - name: Create GitHub Release
@@ -107,13 +110,18 @@ jobs:
           body: |
             ## Moodiary ${{ env.TAG_NAME }} 发布说明
 
-            ### 🚀 优化与功能更新
-            - **极致体积优化**：专为主流 Android arm64-v8a 架构优化构建，大幅精简包体积并提升运行性能。
-            - **Rust Jieba 精简分词**：关闭全量静态词典，使用轻量化词典以精简原生库大小。
-            - **多项核心 Bug 修复**：修复数据库迁移版本比对错误、备份打包并发竞争漏洞、时间窗口加密跨午夜失效问题、WebDAV 类型转换异常、音频加载容错与系统配置默认值保护。
+            ### 🐛 关键 Bug 修复
+            - **修复启动闪退**：修正数据库迁移时序错误（迁移在数据库初始化之前执行导致崩溃）。
+            - **移除 fvp (FFmpeg) 依赖**：消除潜在的原生库初始化崩溃风险。
 
-            ### 📦 下载说明
-            - `app-release.apk`：适用于目前绝大多数主流 Android 手机（64位 ARM v8 架构）。
+            ### 📦 极致体积优化
+            - **移除 fvp 嵌入式 FFmpeg**：减小约 12MB（Android 已内置 ExoPlayer，无需 FFmpeg）。
+            - **启用 R8 代码混淆与资源缩减**：减小约 5MB。
+            - **裁剪 Rust image/zip crate**：移除 AV1 编码器、EXR 等冗余格式支持，减小约 3.5MB。
+            - 总计预计减小 **~20MB**，APK 从 52MB 降至约 30MB。
+
+            ### 📥 下载
+            - `moodiary-{version}-arm64-v8a.apk`：适用于绝大多数主流 Android 手机（64位 ARM v8 架构）。
           files: release-assets/*
           draft: false
           prerelease: false

@@ -29,3 +29,40 @@
 -keep interface repeackage.com.qiku.id.** { *; }
 -keep class org.tensorflow.lite.** { *; }
 -dontwarn org.tensorflow.lite.**
+
+# Flutter & Dart
+-keep class io.flutter.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-dontwarn io.flutter.embedding.**
+
+# Keep native method names for JNI
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# OAID
+-keep class com.github.gzuliyujiang.** { *; }
+
+# Isar Database
+-keep class dev.isar.** { *; }
+
+# WebDAV
+-keep class org.xmlpull.** { *; }
+-dontwarn org.xmlpull.**
+
+# ExoPlayer / Media3
+-keep class com.google.android.exoplayer2.** { *; }
+-keep class androidx.media3.** { *; }
+-dontwarn com.google.android.exoplayer2.**
+
+# ML Kit (mobile_scanner)
+-keep class com.google.mlkit.** { *; }
+-dontwarn com.google.mlkit.**
+
+# Keep Kotlin metadata
+-keep class kotlin.Metadata { *; }
+-dontwarn kotlin.**
+
+# Keep annotations
+-keepattributes Signature
+-keepattributes *Annotation*

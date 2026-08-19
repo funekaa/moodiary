@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:fvp/fvp.dart' as fvp;
 import 'package:get/get.dart';
 import 'package:intl/find_locale.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +18,7 @@ import 'package:moodiary/components/window_buttons/window_buttons.dart';
 import 'package:moodiary/config/env.dart';
 import 'package:moodiary/l10n/app_localizations.dart';
 import 'package:moodiary/l10n/l10n.dart';
+import 'package:moodiary/merge/merge.dart';
 import 'package:moodiary/persistence/hive.dart';
 import 'package:moodiary/persistence/isar.dart';
 import 'package:moodiary/persistence/pref.dart';
@@ -34,12 +34,16 @@ Future<void> _initSystem() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PrefUtil.initPref();
   await IsarUtil.initIsar();
+  // 数据库迁移必须在 Isar 初始化之后执行
+  final lastVersion = PrefUtil.lastAppVersion;
+  if (lastVersion != null) {
+    await MergeUtil.merge(lastAppVersion: lastVersion);
+  }
   await HiveUtil().init();
   await RustLib.init();
   unawaited(_platFormOption());
   WebDavUtil().initWebDav();
   await ThemeUtil().buildTheme();
-  fvp.registerWith();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
