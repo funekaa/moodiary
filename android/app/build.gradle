@@ -42,7 +42,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.moodiary"
-        minSdk 24
+        minSdk 26
         targetSdk 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
