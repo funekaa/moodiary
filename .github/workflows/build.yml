@@ -37,18 +37,33 @@ jobs:
         run: |
           FLUTTER_GRADLE_DIR="$(dirname $(which flutter))/../packages/flutter_tools/gradle"
           if [ -d "$FLUTTER_GRADLE_DIR" ]; then
-            echo "Configuring repositories for $FLUTTER_GRADLE_DIR"
-            cat << 'EOF' > "$FLUTTER_GRADLE_DIR/settings.gradle.kts"
-          pluginManagement {
-              repositories {
-                  gradlePluginPortal()
-                  google()
-                  mavenCentral()
-                  maven("https://repo.gradle.org/gradle/libs-releases")
+            echo "Replacing Kotlin DSL build script with robust Groovy DSL script"
+            rm -f "$FLUTTER_GRADLE_DIR/build.gradle.kts" "$FLUTTER_GRADLE_DIR/settings.gradle.kts"
+            cat << 'EOF' > "$FLUTTER_GRADLE_DIR/build.gradle"
+          plugins {
+              id 'java-gradle-plugin'
+              id 'groovy'
+          }
+
+          gradlePlugin {
+              plugins {
+                  flutterPluginLoader {
+                      id = 'dev.flutter.flutter-plugin-loader'
+                      implementationClass = 'FlutterPluginLoader'
+                  }
+                  flutterGradlePlugin {
+                      id = 'dev.flutter.flutter-gradle-plugin'
+                      implementationClass = 'FlutterLoader'
+                  }
               }
           }
+
+          dependencies {
+              implementation gradleApi()
+              implementation localGroovy()
+          }
           EOF
-            cat "$FLUTTER_GRADLE_DIR/settings.gradle.kts"
+            cat "$FLUTTER_GRADLE_DIR/build.gradle"
           fi
 
       - name: Set Up Rust
