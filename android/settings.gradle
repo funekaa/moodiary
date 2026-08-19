@@ -7,13 +7,11 @@ pluginManagement {
         return flutterSdkPath
     }()
 
-    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
-
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
-        maven { url "https://repo.gradle.org/gradle/libs-releases" }
+        maven { url "$flutterSdkPath/bin/cache/artifacts/engine/android" }
         maven { url "https://storage.googleapis.com/download.flutter.io" }
     }
 }
