@@ -29,7 +29,7 @@ impl Zip {
             .with_context(|| format!("Failed to create ZIP file at {}", file_path))?;
 
         let options = SimpleFileOptions::default()
-            .compression_method(CompressionMethod::Zstd)
+            .compression_method(CompressionMethod::Deflated)
             .unix_permissions(0o755);
 
         Ok(Self {
