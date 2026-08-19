@@ -1,3 +1,17 @@
+## [2.7.4] - 2026-08-19
+
+### 🚀 Optimization & Size Reduction
+- 移除已废弃的 TFLite 离线模型与 `tflite_flutter` 运行时依赖，安装包体积缩减 15MB~25MB+。
+- 改造 Rust 端 Jieba 中文分词依赖，使用精简词典，进一步压缩 Rust 原生二进制库体积。
+
+### 🐛 Bug Fixes
+- 修复数据库版本迁移与检查更新中的字符串版本比对缺陷（引入数值语义化比对 `PackageUtil.compareVersion`）。
+- 修复数据备份导出与 Zip 打包时的并发竞争（Race Condition）漏洞，并规范化跨平台压缩路径分隔符。
+- 修复时间窗口加密 Salt 跨午夜 0 点突变导致解密失败的问题。
+- 修复 WebDAV 同步中 JSON Map 强制类型转换异常与 `_syncStatus` 晚期初始化异常。
+- 修复编辑页加载历史日记时音频文件缺失抛出未捕获异常的问题。
+- 增强 `PrefUtil.getValue` 默认值回退保护，避免冷启动因缺少配置抛出非空断言异常。
+
 ## [2.7.3-4] - 2026-02-25
 
 ### Added
