@@ -6,6 +6,9 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -16,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set Up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -32,154 +35,101 @@ jobs:
             echo "Flutter version detected: $FLUTTER_VERSION"
             echo "flutter-version=$FLUTTER_VERSION" >> $GITHUB_ENV
           else
-            echo ".fvmrc not found. Defaulting to latest Flutter version."
-            echo "flutter-version=stable" >> $GITHUB_ENV
+            echo "flutter-version=3.32.0" >> $GITHUB_ENV
           fi
 
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.flutter-version }}
+          cache: true
 
       - name: Set Up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Decode Keystore
+      - name: Decode Keystore (Optional)
+        if: env.ANDROID_KJS != ''
         run: |
           echo "${{ secrets.ANDROID_KJS }}" | base64 --decode > android/app/key.jks
+        env:
+          ANDROID_KJS: ${{ secrets.ANDROID_KJS }}
 
-      - name: Create local.properties
+      - name: Create local.properties (Optional)
+        if: env.ANDROID_STORE_PASSWORD != ''
         run: |
           echo "storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}" > android/local.properties
           echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/local.properties
+        env:
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Build APK
-        run: flutter build apk --release --obfuscate --split-debug-info=splitMap
+      - name: Build APK (Split Per ABI)
+        run: flutter build apk --release --split-per-abi
 
-      - name: Upload APK Artifact
+      - name: Build Universal APK
+        run: flutter build apk --release
+
+      - name: Collect and Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-  build-windows:
-    runs-on: windows-latest
-    name: Build Windows
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set Up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Read Flutter Version
-        id: flutter_version
-        run: |
-          if (Test-Path .fvmrc) {
-            $FLUTTER_VERSION = (Get-Content .fvmrc | ConvertFrom-Json).flutter
-            echo "Flutter version detected: $FLUTTER_VERSION"
-            echo "flutter-version=$FLUTTER_VERSION" >> $env:GITHUB_ENV
-          } else {
-            echo ".fvmrc not found. Defaulting to latest Flutter version."
-            echo "flutter-version=stable" >> $env:GITHUB_ENV
-          }
-
-      - name: Set Up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.flutter-version }}
-
-      - name: Set Up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-
-      - name: Install Dependencies
-        run: flutter pub get
-
-      - name: Build Windows
-        run: flutter build windows --release
-
-      - name: Create ZIP Archive
-        run: |
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath build\windows\moodiary-windows.zip
-
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-app
-          path: build\windows\moodiary-windows.zip
+          path: build/app/outputs/flutter-apk/*.apk
 
   release:
     runs-on: ubuntu-latest
     name: Publish Release
-    needs: [ build-apk, build-windows ]
+    needs: [ build-apk ]
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Download APK Artifact
+      - name: Download APK Artifacts
         uses: actions/download-artifact@v4
         with:
           name: android-apk
           path: artifacts/android
 
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-app
-          path: artifacts/windows
-
-      - name: Get Latest Tag
-        id: latest_tag
-        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-        with:
-          fetch-all-tags: true
-          sort-tags: true
-
-      - name: Extract Tag Version
-        id: extract_tag_version
+      - name: Extract Version
+        id: get_version
         run: |
-          tag="${{ steps.latest_tag.outputs.tag }}"
-          version="${tag#v}"
-          echo "VERSION=$version" >> $GITHUB_ENV
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION=$(grep "^version:" pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
+            TAG="v$VERSION"
+          fi
+          echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+          echo "Detected tag: $TAG"
 
-      - name: Rename Artifacts
+      - name: Prepare Release Assets
         run: |
-          mkdir -p renamed-artifacts
-          mv artifacts/android/app-release.apk renamed-artifacts/moodiary-${{ env.VERSION }}-android-arm64.apk
-          mv artifacts/windows/moodiary-windows.zip renamed-artifacts/moodiary-${{ env.VERSION }}-windows-x64.zip
+          mkdir -p release-assets
+          cp -r artifacts/android/*.apk release-assets/ || true
+          ls -la release-assets
 
-      - name: Generate Release Notes
-        id: release_notes
-        uses: release-drafter/release-drafter@v5
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          config-name: release-drafter.yml
-          tag: v${{ env.VERSION }}
-          publish: false
+          tag_name: ${{ env.TAG_NAME }}
+          name: Moodiary ${{ env.TAG_NAME }}
+          body: |
+            ## Moodiary ${{ env.TAG_NAME }} 发布说明
+
+            ### 🚀 优化与功能更新
+            - **大幅缩减安装包体积**：清理废弃 TFLite 离线推理库，包体积降低 15MB~25MB+。
+            - **Rust Jieba 精简分词**：关闭全量静态词典，使用轻量化词典以精简原生库大小。
+            - **多项核心 Bug 修复**：修复数据库迁移版本比对错误、备份打包并发竞争漏洞、时间窗口加密跨午夜失效问题、WebDAV 类型转换异常、音频加载容错与系统配置默认值保护。
+
+            ### 📦 下载说明
+            - `app-arm64-v8a-release.apk`：适用于大多数现代 Android 手机（推荐）。
+            - `app-armeabi-v7a-release.apk`：适用于较旧的 32 位 Android 设备。
+            - `app-release.apk`：包含全部架构的通用安装包。
+          files: release-assets/*
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: renamed-artifacts/*
-          tag: v${{ env.VERSION }}
-          name: v${{ env.VERSION }}
-          body: ${{ steps.release_notes.outputs.body }}
-          draft: true
-          prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
