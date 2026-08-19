@@ -15,7 +15,7 @@ ttf-parser = { git = "https://github.com/ZhuJHua/ttf-parser", branch = "fvar" }
 ring = "0.17.14"
 zip = "2.6.1"
 walkdir = "2.5.0"
-jieba-rs = { version = "0.7.2", features = ["default-dict", "tfidf", "textrank"] }
+jieba-rs = { version = "0.7.2", default-features = false, features = ["tfidf", "textrank"] }
 once_cell = "1.21.3"
 tokio = "1.44.2"
 argon2 = { version = "0.6.0-pre.1", features = ["std", "default"] }

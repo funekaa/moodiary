@@ -30,7 +30,7 @@ pub async fn init_jieba() {
 impl JiebaRs {
     fn new() -> Self {
         Self {
-            inner: Jieba::new(),
+            inner: Jieba::empty(),
             tfidf: OnceCell::new(),
             text_rank: OnceCell::new(),
         }

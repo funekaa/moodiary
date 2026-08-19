@@ -153,12 +153,17 @@ class EditLogic extends GetxController {
         replaceMap[name] = xFile.path;
         state.imageFileList.add(xFile);
       }
-      //临时拷贝一份拷贝音频数据到缓存目录
+      //临时拷贝一份音频数据到缓存目录
       for (final name in state.originalDiary!.audioName) {
         state.audioNameList.add(name);
-        await File(
-          FileUtil.getRealPath('audio', name),
-        ).copy(FileUtil.getCachePath(name));
+        try {
+          final audioFile = File(FileUtil.getRealPath('audio', name));
+          if (await audioFile.exists()) {
+            await audioFile.copy(FileUtil.getCachePath(name));
+          }
+        } catch (e) {
+          logger.d('Copy audio to cache failed for $name: $e');
+        }
       }
       //临时拷贝一份视频数据，别忘记了缩略图
       for (final name in state.originalDiary!.videoName) {

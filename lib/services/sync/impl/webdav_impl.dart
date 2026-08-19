@@ -21,7 +21,7 @@ class WebdavSyncServiceImpl implements SyncService {
       ConnectivityStatus.connecting.obs;
 
   bool get _isConnected => _connectivity.value == ConnectivityStatus.connected;
-  late Map<String, String> _syncStatus;
+  Map<String, String> _syncStatus = {};
   Timer? _connectivityTimer;
 
   WebdavSyncServiceImpl({
@@ -32,6 +32,7 @@ class WebdavSyncServiceImpl implements SyncService {
 
   @override
   Future<void> init() async {
+    _syncStatus = {};
     _client = webdav.newClient(
       url,
       user: username,
@@ -101,9 +102,16 @@ class WebdavSyncServiceImpl implements SyncService {
     try {
       final response = await _client.read(WebDavOptions.syncFlagPath);
       if (response.isNotEmpty) {
+        final decoded = jsonDecode(utf8.decode(response));
+        final syncData = decoded is Map
+            ? Map<String, String>.from(
+                decoded.map((k, v) => MapEntry(k.toString(), v.toString())),
+              )
+            : <String, String>{};
+        _syncStatus = syncData;
         return SyncResult(
           status: SyncStatus.success,
-          data: jsonDecode(utf8.decode(response)) as Map<String, String>,
+          data: syncData,
         );
       }
     } catch (e) {

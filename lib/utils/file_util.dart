@@ -113,7 +113,7 @@ class FileUtil {
     final datetime = DateTime.now();
     final fileName = join(
       zipPath,
-      '心绪日记${datetime.toString().split(' ')[0]}备份.zip',
+      'Moodiary${datetime.toString().split(' ')[0]}backup.zip',
     );
     final outputStream = OutputFileStream(fileName);
     zipEncoder.createWithStream(outputStream);
@@ -142,28 +142,38 @@ class FileUtil {
     final zipPath = params['zipPath'] as String;
     final dataPath = params['dataPath'] as String;
     final datetime = DateTime.now();
+    final isarFileName = '${datetime.millisecondsSinceEpoch}.isar';
+    final isarExportPath = join(zipPath, isarFileName);
     final filePath = join(
       zipPath,
       '心绪日记${datetime.toString().split(' ')[0]}备份.zip',
     );
+
+    // 先导出数据库文件，确保写盘完毕
+    await IsarUtil.exportIsar(dataPath, zipPath, isarFileName);
+
     final zip = Zip(filePath: filePath);
-    await Future.wait([
-      zip.addDir(dirPath: join(dataPath, 'image'), basePath: 'image'),
-      zip.addDir(dirPath: join(dataPath, 'audio'), basePath: 'audio'),
-      zip.addDir(dirPath: join(dataPath, 'video'), basePath: 'video'),
-      zip.addDir(dirPath: join(dataPath, 'font'), basePath: 'font'),
-      IsarUtil.exportIsar(
-        dataPath,
-        zipPath,
-        '${datetime.millisecondsSinceEpoch}.isar',
-      ),
-      zip.addFile(
-        filePath: join(zipPath, '${datetime.millisecondsSinceEpoch}.isar'),
-        zipPath: '${datetime.millisecondsSinceEpoch}.isar',
-      ),
-    ]);
-    await zip.finish();
-    zip.dispose();
+    try {
+      await zip.addDir(dirPath: join(dataPath, 'image'), basePath: 'image');
+      await zip.addDir(dirPath: join(dataPath, 'audio'), basePath: 'audio');
+      await zip.addDir(dirPath: join(dataPath, 'video'), basePath: 'video');
+      await zip.addDir(dirPath: join(dataPath, 'font'), basePath: 'font');
+
+      if (await File(isarExportPath).exists()) {
+        await zip.addFile(
+          filePath: isarExportPath,
+          zipPath: isarFileName,
+        );
+      }
+      await zip.finish();
+    } finally {
+      zip.dispose();
+      // 清理临时导出的 .isar 数据库文件
+      final isarFile = File(isarExportPath);
+      if (await isarFile.exists()) {
+        await isarFile.delete().catchError((_) => isarFile);
+      }
+    }
     return filePath;
   }
 

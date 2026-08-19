@@ -50,7 +50,6 @@ dependencies:
   collection: 1.19.1
   cupertino_icons: 1.0.8
   font_awesome_flutter: 10.8.0
-  tflite_flutter: 0.11.0
   sliver_tools: 0.2.12
   lottie: 3.3.1
   flutter_adaptive_scaffold: 0.3.3+1
@@ -195,7 +194,6 @@ flutter:
     - assets/icon/light/
     - assets/lottie/
     - res/sponsor/
-    - assets/tflite/
 
   uses-material-design: true
 

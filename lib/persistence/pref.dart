@@ -236,19 +236,55 @@ class PrefUtil {
     }
   }
 
-  static T? getValue<T>(String key) {
+  static T? getValue<T>(String key, {T? defaultValue}) {
+    T? val;
     if (T == int) {
-      return _prefs.getInt(key) as T?;
+      val = _prefs.getInt(key) as T?;
     } else if (T == bool) {
-      return _prefs.getBool(key) as T?;
+      val = _prefs.getBool(key) as T?;
     } else if (T == double) {
-      return _prefs.getDouble(key) as T?;
+      val = _prefs.getDouble(key) as T?;
     } else if (T == String) {
-      return _prefs.getString(key) as T?;
+      val = _prefs.getString(key) as T?;
     } else if (T == List<String>) {
-      return _prefs.getStringList(key) as T?;
+      val = _prefs.getStringList(key) as T?;
     } else {
       throw ArgumentError('Unsupported type: $T');
+    }
+
+    if (val != null) return val;
+    if (defaultValue != null) return defaultValue;
+
+    // 针对关键配置提供安全回退，防止启动时因未初始化导致空指针断言崩溃
+    switch (key) {
+      case 'lock':
+      case 'lockNow':
+      case 'autoSync':
+      case 'local':
+      case 'autoSyncAfterChange':
+      case 'syncEncryption':
+        return (false as T);
+      case 'firstStart':
+      case 'showWordCount':
+      case 'backendPrivacy':
+      case 'dynamicColor':
+        return (true as T);
+      case 'fontScale':
+        return (1.0 as T);
+      case 'themeMode':
+      case 'colorType':
+      case 'fontTheme':
+        return (0 as T);
+      case 'quality':
+        return (2 as T);
+      case 'language':
+        return ('system' as T);
+      case 'webDavOption':
+        return (<String>[] as T);
+      case 'customFont':
+        return ('' as T);
+      default:
+        return null;
     }
   }
 

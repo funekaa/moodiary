@@ -77,7 +77,17 @@ impl Zip {
 
         for entry in WalkDir::new(&dir_path).into_iter().filter_map(Result::ok) {
             let path = entry.path();
-            let relative_path = path.strip_prefix(&dir_path)?.to_str().unwrap();
+            if path == Path::new(&dir_path) {
+                continue;
+            }
+            let relative_path = path
+                .strip_prefix(&dir_path)?
+                .to_str()
+                .unwrap_or_default()
+                .replace('\\', "/");
+            if relative_path.is_empty() {
+                continue;
+            }
             let zip_path = format!("{}/{}", base_path, relative_path);
 
             if path.is_dir() {

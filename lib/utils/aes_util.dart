@@ -71,7 +71,7 @@ class AesUtil {
   }) async {
     final timeSlot = _currentTimeSlot(validDuration);
     final dynamicKey = timeSlot.toString().md5;
-    final salt = _dailySalt();
+    final salt = _slotSalt(timeSlot);
 
     final aesKey = await deriveKey(salt: salt, userKey: dynamicKey);
     return await encrypt(key: aesKey, data: data);
@@ -84,11 +84,14 @@ class AesUtil {
     int toleranceSlots = 1,
   }) async {
     final currentSlot = _currentTimeSlot(validDuration);
-    final salt = _dailySalt();
 
     for (int offset = 0; offset <= toleranceSlots; offset++) {
-      for (final slot in [currentSlot - offset, currentSlot + offset]) {
+      final slotsToCheck = offset == 0
+          ? [currentSlot]
+          : [currentSlot - offset, currentSlot + offset];
+      for (final slot in slotsToCheck) {
         final dynamicKey = slot.toString().md5;
+        final salt = _slotSalt(slot);
         final aesKey = await deriveKey(salt: salt, userKey: dynamicKey);
         try {
           final result = await decrypt(
@@ -110,8 +113,7 @@ class AesUtil {
     return now ~/ duration.inMilliseconds;
   }
 
-  static String _dailySalt() {
-    final date = DateTime.now();
-    return '${date.year}-${date.month}-${date.day}'.md5;
+  static String _slotSalt(int slot) {
+    return 'moodiary_slot_$slot'.md5;
   }
 }

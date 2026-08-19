@@ -52,17 +52,7 @@ class $AssetsLottieGen {
     loadingMaterial,
     ok,
   ];
-}
 
-class $AssetsTfliteGen {
-  const $AssetsTfliteGen();
-
-  /// File path: assets/tflite/vocab.txt
-  String get vocab => 'assets/tflite/vocab.txt';
-
-  /// List of all assets
-  List<String> get values => [vocab];
-}
 
 class $ResSponsorGen {
   const $ResSponsorGen();
@@ -135,7 +125,6 @@ class Assets {
 
   static const $AssetsIconGen icon = $AssetsIconGen();
   static const $AssetsLottieGen lottie = $AssetsLottieGen();
-  static const $AssetsTfliteGen tflite = $AssetsTfliteGen();
   static const $ResGen res = $ResGen();
 }
 
