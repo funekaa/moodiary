@@ -13,6 +13,8 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven { url "https://repo.gradle.org/gradle/libs-releases" }
+        maven { url "https://storage.googleapis.com/download.flutter.io" }
     }
 }
 
