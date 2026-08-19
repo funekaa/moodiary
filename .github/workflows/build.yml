@@ -104,7 +104,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Build APK (Split Per ABI)
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi -v
 
       - name: Build Universal APK
         run: flutter build apk --release
