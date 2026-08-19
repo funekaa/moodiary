@@ -39,10 +39,25 @@ jobs:
           if [ -d "$FLUTTER_GRADLE_DIR" ]; then
             echo "Replacing Kotlin DSL build script with robust Groovy DSL script"
             rm -f "$FLUTTER_GRADLE_DIR/build.gradle.kts" "$FLUTTER_GRADLE_DIR/settings.gradle.kts"
+            cat << 'EOF' > "$FLUTTER_GRADLE_DIR/settings.gradle"
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          EOF
             cat << 'EOF' > "$FLUTTER_GRADLE_DIR/build.gradle"
           plugins {
               id 'java-gradle-plugin'
               id 'groovy'
+          }
+
+          repositories {
+              google()
+              mavenCentral()
+              gradlePluginPortal()
           }
 
           gradlePlugin {
