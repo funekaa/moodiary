@@ -38,9 +38,11 @@ jobs:
           FLUTTER_GRADLE_DIR="$(dirname $(which flutter))/../packages/flutter_tools/gradle"
           if [ -f "$FLUTTER_GRADLE_DIR/build.gradle.kts" ]; then
             echo "Patching $FLUTTER_GRADLE_DIR/build.gradle.kts"
-            sed -i 's/id("org.gradle.kotlin.kotlin-dsl") version "[^"]*"/id("org.gradle.kotlin.kotlin-dsl")/g' "$FLUTTER_GRADLE_DIR/build.gradle.kts"
-            sed -i 's/id "org.gradle.kotlin.kotlin-dsl" version "[^"]*"/id "org.gradle.kotlin.kotlin-dsl"/g' "$FLUTTER_GRADLE_DIR/build.gradle.kts"
-            head -n 15 "$FLUTTER_GRADLE_DIR/build.gradle.kts"
+            sed -i 's/`kotlin-dsl`/`java`/g' "$FLUTTER_GRADLE_DIR/build.gradle.kts"
+            sed -i 's/"kotlin-dsl"/"java"/g' "$FLUTTER_GRADLE_DIR/build.gradle.kts"
+            sed -i 's/id("org.gradle.kotlin.kotlin-dsl") version "[^"]*"//g' "$FLUTTER_GRADLE_DIR/build.gradle.kts"
+            sed -i 's/id("org.gradle.kotlin.kotlin-dsl")//g' "$FLUTTER_GRADLE_DIR/build.gradle.kts"
+            head -n 20 "$FLUTTER_GRADLE_DIR/build.gradle.kts"
           fi
 
       - name: Set Up Rust
