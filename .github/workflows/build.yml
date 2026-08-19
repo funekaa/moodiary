@@ -65,6 +65,8 @@ jobs:
           EOF
             cat "$FLUTTER_GRADLE_DIR/build.gradle"
           fi
+
+      - name: Set Up Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Dependencies
