@@ -1,4 +1,4 @@
-## [2.7.4] - 2026-08-19
+## [3.0.0] - 2026-08-19
 
 ### 🚀 Optimization & Size Reduction
 - 移除已废弃的 TFLite 离线模型与 `tflite_flutter` 运行时依赖，安装包体积缩减 15MB~25MB+。
